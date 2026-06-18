@@ -1,0 +1,68 @@
+import streamlit as st
+import pandas as pd
+import gdown
+import os
+
+st.set_page_config(
+    page_title="Dashboard Data",
+    page_icon="📊",
+    layout="wide"
+)
+
+st.title("📊 Dashboard Data")
+
+FILE_ID = "1nC77Pp3A9PXB6UiaV2NLCiisbFu-7sbH"
+OUTPUT = "data.xlsx"
+
+@st.cache_data
+def load_data():
+
+    if not os.path.exists(OUTPUT):
+        url = f"https://drive.google.com/uc?id={FILE_ID}"
+        gdown.download(url, OUTPUT, quiet=False)
+
+    return pd.read_excel(OUTPUT)
+
+try:
+
+    df = load_data()
+
+    st.success("✅ Data berhasil dimuat")
+
+    st.sidebar.metric("Jumlah Baris", df.shape[0])
+    st.sidebar.metric("Jumlah Kolom", df.shape[1])
+
+    st.subheader("Preview Data")
+    st.dataframe(df, use_container_width=True)
+
+    st.subheader("Statistik")
+    st.dataframe(df.describe(include="all"))
+
+    angka = df.select_dtypes(include="number").columns
+
+    if len(angka):
+
+        kolom = st.selectbox(
+            "Pilih Kolom",
+            angka
+        )
+
+        tab1, tab2 = st.tabs(["Bar Chart","Line Chart"])
+
+        with tab1:
+            st.bar_chart(df[kolom])
+
+        with tab2:
+            st.line_chart(df[kolom])
+
+    csv = df.to_csv(index=False).encode("utf-8")
+
+    st.download_button(
+        "📥 Download CSV",
+        csv,
+        "data.csv",
+        "text/csv"
+    )
+
+except Exception as e:
+    st.error(e)
